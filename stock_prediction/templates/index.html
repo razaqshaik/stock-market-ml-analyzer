@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Price Predictor - AI Analytics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #fdbb2d 0%, #22c1c3 100%);
+            --danger-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            --dark-bg: #0f0f23;
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #ffffff;
+            --text-secondary: #b8c6db;
+            --shadow-1: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --shadow-2: 0 16px 64px rgba(0, 0, 0, 0.2);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--dark-bg);
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(118, 75, 162, 0.1) 0%, transparent 50%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 3rem 0;
+        }
+
+        .header h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .header .subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .search-section:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-2);
+        }
+
+        .search-container {
+            position: relative;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1.25rem 1.5rem;
+            padding-right: 3.5rem;
+            font-size: 1.1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid transparent;
+            border-radius: 16px;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .search-input:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            pointer-events: none;
+        }
+
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(15, 15, 35, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            margin-top: 0.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 10;
+            box-shadow: var(--shadow-2);
+        }
+
+        .suggestion-item {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .suggestion-symbol {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .suggestion-name {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        .predict-btn {
+            display: block;
+            width: 100%;
+            max-width: 280px;
+            margin: 2rem auto 0;
+            padding: 1.25rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 16px;
+            background: var(--primary-gradient);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .predict-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-2);
+        }
+
+        .predict-btn:active {
+            transform: translateY(0);
+        }
+
+        .predict-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-state {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 1.5rem;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .selected-stock {
+            display: none;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .selected-stock.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stock-symbol {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stock-name {
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        .results {
+            display: none;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .results.show {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: var(--shadow-1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-gradient);
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-2);
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .current-data {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+
+        .data-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.25rem;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .data-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .data-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .predictions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .prediction-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .prediction-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .model-name {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .predicted-price {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: var(--success-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .prediction-accuracy {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .recommendation {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .rec-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1.25rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1.5rem;
+        }
+
+        .rec-buy { background: var(--success-gradient); color: #000; }
+        .rec-sell { background: var(--danger-gradient); color: #000; }
+        .rec-hold { background: var(--warning-gradient); color: #000; }
+
+        .confidence-level {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .expected-change {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .recommendation-reason {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .error-message {
+            background: rgba(255, 99, 99, 0.1);
+            border: 1px solid rgba(255, 99, 99, 0.3);
+            color: #ff6b6b;
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin: 1.5rem 0;
+            text-align: center;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .unavailable {
+            opacity: 0.5;
+            position: relative;
+        }
+
+        .unavailable::after {
+            content: 'Unavailable';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 16px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .search-section {
+                padding: 1.5rem;
+            }
+            
+            .results {
+                grid-template-columns: 1fr;
+            }
+            
+            .current-data {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .predictions-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .current-data {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Stock Price Predictor</h1>
+            <p class="subtitle">Advanced AI-powered stock analysis with machine learning predictions</p>
+        </header>
+
+        <div class="search-section">
+            <div class="search-container">
+                <input type="text" 
+                       id="stockSearch" 
+                       class="search-input" 
+                       placeholder="Search for stocks (e.g., AAPL, Apple, Microsoft)..."
+                       autocomplete="off">
+                <div class="search-icon">🔍</div>
+                <div id="suggestions" class="suggestions" style="display: none;"></div>
+            </div>
+            
+            <button id="predictBtn" class="predict-btn">
+                Analyze Stock
+            </button>
+        </div>
+
+        <div id="selectedStock" class="selected-stock">
+            <div class="stock-symbol"></div>
+            <div class="stock-name"></div>
+        </div>
+
+        <div id="loadingState" class="loading-state">
+            <div class="loading-spinner"></div>
+            <h3>Analyzing Market Data</h3>
+            <p>Running AI models to generate predictions...</p>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+
+        <div id="results" class="results">
+            <div class="card">
+                <h3>📊 Current Market Data</h3>
+                <div id="currentData" class="current-data"></div>
+            </div>
+
+            <div class="card">
+                <h3>🤖 AI Predictions</h3>
+                <div id="predictions" class="predictions-grid"></div>
+            </div>
+
+            <div class="card">
+                <h3>💡 Investment Recommendation</h3>
+                <div id="recommendation" class="recommendation"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE_URL = 'http://localhost:5000';
+
+        // Stock database
+        const stockDatabase = [
+            { symbol: 'AAPL', name: 'Apple Inc.', category: 'Technology' },
+            { symbol: 'GOOGL', name: 'Alphabet Inc.', category: 'Technology' },
+            { symbol: 'MSFT', name: 'Microsoft Corporation', category: 'Technology' },
+            { symbol: 'AMZN', name: 'Amazon.com Inc.', category: 'E-commerce' },
+            { symbol: 'TSLA', name: 'Tesla Inc.', category: 'Automotive' },
+            { symbol: 'NVDA', name: 'NVIDIA Corporation', category: 'Technology' },
+            { symbol: 'META', name: 'Meta Platforms Inc.', category: 'Technology' },
+            { symbol: 'NFLX', name: 'Netflix Inc.', category: 'Entertainment' },
+            { symbol: 'JPM', name: 'JPMorgan Chase & Co.', category: 'Banking' },
+            { symbol: 'BAC', name: 'Bank of America Corp', category: 'Banking' },
+            { symbol: 'WFC', name: 'Wells Fargo & Company', category: 'Banking' },
+            { symbol: 'GS', name: 'Goldman Sachs Group Inc.', category: 'Banking' },
+            { symbol: 'MS', name: 'Morgan Stanley', category: 'Banking' },
+            { symbol: 'V', name: 'Visa Inc.', category: 'Financial Services' },
+            { symbol: 'MA', name: 'Mastercard Inc.', category: 'Financial Services' },
+            { symbol: 'JNJ', name: 'Johnson & Johnson', category: 'Healthcare' },
+            { symbol: 'PFE', name: 'Pfizer Inc.', category: 'Pharmaceuticals' },
+            { symbol: 'UNH', name: 'UnitedHealth Group Inc.', category: 'Healthcare' },
+            { symbol: 'WMT', name: 'Walmart Inc.', category: 'Retail' },
+            { symbol: 'HD', name: 'Home Depot Inc.', category: 'Retail' },
+            { symbol: 'NKE', name: 'NIKE Inc.', category: 'Consumer Goods' },
+            { symbol: 'MCD', name: 'McDonald\'s Corporation', category: 'Food & Beverage' },
+            { symbol: 'KO', name: 'Coca-Cola Company', category: 'Beverages' },
+            { symbol: 'PEP', name: 'PepsiCo Inc.', category: 'Beverages' },
+            { symbol: 'XOM', name: 'Exxon Mobil Corporation', category: 'Energy' },
+            { symbol: 'CVX', name: 'Chevron Corporation', category: 'Energy' },
+            { symbol: 'BA', name: 'Boeing Company', category: 'Aerospace' },
+            { symbol: 'CAT', name: 'Caterpillar Inc.', category: 'Industrial' },
+            { symbol: 'DIS', name: 'Walt Disney Company', category: 'Entertainment' }
+        ];
+
+        let selectedStock = null;
+        let searchTimeout = null;
+
+        // DOM elements
+        const stockSearch = document.getElementById('stockSearch');
+        const suggestions = document.getElementById('suggestions');
+        const selectedStockDiv = document.getElementById('selectedStock');
+        const predictBtn = document.getElementById('predictBtn');
+        const loadingState = document.getElementById('loadingState');
+        const errorMessage = document.getElementById('errorMessage');
+        const results = document.getElementById('results');
+
+        // Search functionality
+        stockSearch.addEventListener('input', handleSearch);
+        stockSearch.addEventListener('keydown', handleKeydown);
+        predictBtn.addEventListener('click', predictStock);
+
+        function handleSearch(e) {
+            const query = e.target.value.trim();
+            
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (query.length >= 1) {
+                    showSuggestions(query);
+                } else {
+                    hideSuggestions();
+                }
+            }, 150);
+        }
+
+        function handleKeydown(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = e.target.value.trim().toUpperCase();
+                const stock = stockDatabase.find(s => s.symbol === query);
+                if (stock) {
+                    selectStock(stock);
+                } else if (query.length > 0) {
+                    selectStock({ symbol: query, name: 'Custom Symbol' });
+                }
+            } else if (e.key === 'Escape') {
+                hideSuggestions();
+            }
+        }
+
+        function showSuggestions(query) {
+            const filtered = stockDatabase.filter(stock => 
+                stock.symbol.toLowerCase().includes(query.toLowerCase()) ||
+                stock.name.toLowerCase().includes(query.toLowerCase())
+            ).slice(0, 8);
+
+            if (filtered.length === 0) {
+                // Allow custom symbol
+                if (/^[A-Za-z]{1,10}$/.test(query)) {
+                    suggestions.innerHTML = `
+                        <div class="suggestion-item" onclick="selectCustomStock('${query.toUpperCase()}')">
+                            <div class="suggestion-symbol">${query.toUpperCase()}</div>
+                            <div class="suggestion-name">Custom Symbol</div>
+                        </div>
+                    `;
+                    suggestions.style.display = 'block';
+                } else {
+                    hideSuggestions();
+                }
+                return;
+            }
+
+            suggestions.innerHTML = filtered.map(stock => `
+                <div class="suggestion-item" onclick="selectStock({symbol:'${stock.symbol}', name:'${stock.name}'})">
+                    <div class="suggestion-symbol">${stock.symbol}</div>
+                    <div class="suggestion-name">${stock.name}</div>
+                </div>
+            `).join('');
+            
+            suggestions.style.display = 'block';
+        }
+
+        function hideSuggestions() {
+            suggestions.style.display = 'none';
+        }
+
+        function selectStock(stock) {
+            selectedStock = stock;
+            stockSearch.value = `${stock.symbol} - ${stock.name}`;
+            hideSuggestions();
+            showSelectedStock(stock);
+        }
+
+        function selectCustomStock(symbol) {
+            selectStock({ symbol, name: 'Custom Symbol' });
+        }
+
+        function showSelectedStock(stock) {
+            selectedStockDiv.querySelector('.stock-symbol').textContent = stock.symbol;
+            selectedStockDiv.querySelector('.stock-name').textContent = stock.name;
+            selectedStockDiv.classList.add('show');
+        }
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-container')) {
+                hideSuggestions();
+            }
+        });
+
+        async function predictStock() {
+            if (!selectedStock) {
+                showError('Please select a stock first');
+                return;
+            }
+
+            showLoading(true);
+            hideError();
+            hideResults();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ symbol: selectedStock.symbol })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to get prediction');
+                }
+
+                displayResults(data);
+            } catch (error) {
+                console.error('Prediction error:', error);
+                showError(error.message || 'Failed to analyze stock. Please check if the symbol is valid and try again.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayResults(data) {
+            displayCurrentData(data.current_data);
+            displayPredictions(data.predictions, data.errors);
+            displayRecommendation(data.recommendation);
+            showResults();
+        }
+
+        function displayCurrentData(currentData) {
+            const container = document.getElementById('currentData');
+            container.innerHTML = `
+                <div class="data-item">
+                    <div class="data-label">Current Price</div>
+                    <div class="data-value">$${currentData.close || 'N/A'}</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Open</div>
+                    <div class="data-value">$${currentData.open || 'N/A'}</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">High</div>
+                    <div class="data-value">$${currentData.high || 'N/A'}</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Low</div>
+                    <div class="data-value">$${currentData.low || 'N/A'}</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Volume</div>
+                    <div class="data-value">${currentData.volume ? formatNumber(currentData.volume) : 'N/A'}</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Date</div>
+                    <div class="data-value">${currentData.date || 'N/A'}</div>
+                </div>
+            `;
+        }
+
+        function displayPredictions(predictions, errors) {
+            const container = document.getElementById('predictions');
+            const models = [
+                { key: 'linear_regression', name: 'Linear Regression', icon: '📈' },
+                { key: 'arima', name: 'ARIMA Model', icon: '📊' },
+                { key: 'lstm', name: 'LSTM Neural Network', icon: '🧠' }
+            ];
+
+            container.innerHTML = models.map(model => {
+                const prediction = predictions[model.key];
+                const error = errors[model.key];
+                const isAvailable = prediction !== null;
+
+                return `
+                    <div class="prediction-card ${!isAvailable ? 'unavailable' : ''}">
+                        <div class="model-name">${model.icon} ${model.name}</div>
+                        ${isAvailable ? `
+                            <div class="predicted-price">$${prediction}</div>
+                            <div class="prediction-accuracy">RMSE: ${error ? error.toFixed(2) : 'N/A'}</div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function displayRecommendation(recommendation) {
+            const container = document.getElementById('recommendation');
+            const badgeClass = `rec-${recommendation.decision.toLowerCase()}`;
+            const icon = getRecommendationIcon(recommendation.decision);
+            
+            container.innerHTML = `
+                <div class="rec-badge ${badgeClass}">
+                    ${icon} ${recommendation.decision}
+                </div>
+                <div class="confidence-level">Confidence: ${recommendation.confidence}</div>
+                <div class="expected-change">
+                    Expected Change: <strong>${recommendation.expected_change > 0 ? '+' : ''}${recommendation.expected_change}%</strong>
+                </div>
+                <p class="recommendation-reason">${recommendation.reason}</p>
+                ${recommendation.avg_prediction ? `
+                    <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary);">
+                        Average Predicted Price: $${recommendation.avg_prediction}
+                    </p>
+                ` : ''}
+            `;
+        }
+
+        function getRecommendationIcon(decision) {
+            const icons = {
+                'BUY': '📈',
+                'SELL': '📉',
+                'HOLD': '⏸️'
+            };
+            return icons[decision] || '❓';
+        }
+
+        function showLoading(show) {
+            loadingState.style.display = show ? 'block' : 'none';
+            predictBtn.disabled = show;
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('show');
+        }
+
+        function showResults() {
+            results.classList.add('show');
+        }
+
+        function hideResults() {
+            results.classList.remove('show');
+        }
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat().format(num);
+        }
+    </script>
+</body>
+</html>
